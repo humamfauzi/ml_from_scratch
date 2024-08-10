@@ -62,8 +62,22 @@ class DBSCAN:
 
     # definition 4
     def density_connected(self, questioned_point: Point, reference_point: Point) -> bool:
-
-        pass
+        if self.is_directly_density_reachable(questioned_point, reference_point):
+            return True
+        for neighbor in reference_point.get_neighbors():
+            # in case you are wondering, yes it is reversed order from is_density_reachable
+            # the edge in density connected should not have min point but point it connect
+            # does need to be epsilon neighbor and min points
+            if not self.is_directly_density_reachable(reference_point, neighbor):
+                continue
+            # this detect whether we reach core points, if we can reach core points
+            # we can use the is_density_reachable to check whether we can
+            # reach other edge or not
+            ddreachable = self.is_directly_density_reachable(reference_point, neighbor)
+            dreachable = self.is_density_reachable(questioned_point, neighbor, [])
+            if ddreachable and dreachable:
+                return True
+        return False 
 
     # definition 5 (cluster) and 6 (noise)
     def classification(self) -> List[int]:
