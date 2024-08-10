@@ -15,6 +15,12 @@ class Point:
     def __eq__(self, other: Point) -> bool:
         return self.id == other.id
 
+    def __repr__(self) -> str:
+        return f"{self.id} {self.data}"
+
+    def __str__(self) -> str:
+        return f"{self.id} {self.data}"
+
     def add_neighbor(self, data_point: Point):
         self.neighbors.append(data_point)
 
