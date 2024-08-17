@@ -1,4 +1,5 @@
 import unittest
+import random
 from point import Point
 from typing import List
 
@@ -79,10 +80,72 @@ class DBSCAN:
                 return True
         return False 
 
+    def not_visited(self, already_visited: List[Point]) -> List[Point]:
+        if len(already_visited) == 0:
+            return self.dataset
+        collect = []
+        for point in self.dataset:
+            if point not in already_visited:
+                collect.append(point)
+        return collect
+
+    
+    def random_pick_point(self, already_visited, determined = True) -> Point:
+        # in the actual paper, picking point done by random choice
+        # unf, picking random point would make the test hard and make pin pointing the bug harder
+        # so we would use deterministic approach which can be toggled
+        if determined:
+            for pick in self.not_visited(already_visited):
+                if pick.cluster is None and pick.is_noise is False:
+                    return pick
+            return None
+
+        while True:
+            n = self.not_visited(already_visited)
+            rand_int = random.randint(0, len(n) - 1)
+            # only pick point that not declared as a noise and
+            # not belong to any cluster
+            pick = n[rand_int]
+            if pick.cluster is None and pick.is_noise is False:
+                return pick
+
+    def recursive_find(self, point: Point, cluster_count: int, already_visited: List[Point] = []) -> bool:
+        # if a point does not have lower neighbor than assigned point, then it can be considered as noise
+        # however, this also can be, potentially, considered as a border point so this can be 
+        # override in other iteration; this would fulfill definition 6
+        if point.neighbor_size() < self.min_point and point.cluster is None:
+            point.is_noise = True
+            already_visited.append(point)
+            return False
+
+        point.assign_cluster(cluster_count)
+        for neighbor in point.get_neighbors():
+            if neighbor in already_visited:
+                continue
+            # if the neighbor is density reachable, then we can assign the cluster
+            # in definition 5, it is called maximality if it is density reachable
+            # and it is called connectivity if it is density connected
+            if self.is_density_reachable(neighbor, point, already_visited) or self.density_connected(neighbor, point):
+                neighbor.assign_cluster(cluster_count)
+                # when a point assigned to a cluster, previous attempt to mark it as a noise would be nulled
+                neighbor.is_noise = False
+            already_visited.append(neighbor)
+            self.recursive_find(neighbor, cluster_count, already_visited)
+        return True
+
     # definition 5 (cluster) and 6 (noise)
     def classification(self) -> List[int]:
-        pass
-
+        cluster_count = 1
+        already_visited = []
+        clusters = []
+        while True:
+            if len(already_visited) == len(self.dataset):
+                break
+            point = self.random_pick_point(already_visited)
+            if self.recursive_find(point, cluster_count, already_visited):
+                clusters.append(cluster_count)
+                cluster_count += 1
+        return clusters
 
 def euclidean(p1, p2):
     return ((p1.data[0] - p2.data[0]) ** 2 + (p1.data[1] - p2.data[1]) ** 2 ) ** .5
@@ -256,6 +319,65 @@ class TestDBSCAN(unittest.TestCase):
         reference_point = db.dataset[-2]
         is_connected = db.density_connected(questioned_point, reference_point)
         self.assertEqual(is_connected, False)
+
+    def test_classification(self):
+        # all of this should belong to the same cluster
+        cluster1 = [
+            [0, 0], # center cluster
+            [0, 2], # edge 
+            [2, 0],
+            [-2, 0],
+            [0, -2],
+            [0, 6], # not epsilon neighbor of center cluster but reachable via edge
+            [-6, 0], # not epsilon neighbor of center cluster but reachable via edge
+        ]
+
+        # all of this should belong to the same cluster
+        cluster2 = [
+                [-16,-16], # center cluster
+                [-17,-16], 
+                [-16,-17],
+                [-15,-16],
+                [-16,-15],
+        ]
+
+        # should not be assigned to any cluster
+        noise = [
+            [200,200],
+            [-200,-200],
+        ]
+
+        all_points = cluster1 + cluster2 + noise
+
+        db = DBSCAN(all_points, euclidean, 4, 5)
+        db.run_all_epsilon_neighbor()
+
+        clusters = db.classification()
+        self.assertListEqual(clusters, [1, 2])
+        
+        # cluster might have different order depending on random pick
+        # all we need is to ensure whether a group belong to same cluster or not
+        # cluster not tested since it is our reference
+        first_cluster = db.dataset[0].cluster
+        second_cluster = db.dataset[7].cluster
+        self.assertNotEqual(first_cluster, second_cluster)
+
+        self.assertEqual(db.dataset[1].cluster, first_cluster)
+        self.assertEqual(db.dataset[2].cluster, first_cluster)
+        self.assertEqual(db.dataset[3].cluster, first_cluster)
+        self.assertEqual(db.dataset[4].cluster, first_cluster)
+        self.assertEqual(db.dataset[5].cluster, first_cluster)
+        self.assertEqual(db.dataset[6].cluster, first_cluster)
+
+        self.assertEqual(db.dataset[8].cluster, second_cluster)
+        self.assertEqual(db.dataset[9].cluster, second_cluster)
+        self.assertEqual(db.dataset[10].cluster, second_cluster)
+        self.assertEqual(db.dataset[11].cluster, second_cluster)
+
+        self.assertEqual(db.dataset[12].cluster, None)
+        self.assertEqual(db.dataset[12].is_noise, True)
+        self.assertEqual(db.dataset[13].cluster, None)
+        self.assertEqual(db.dataset[13].is_noise, True)
         
 if __name__ == "__main__":
     unittest.main()

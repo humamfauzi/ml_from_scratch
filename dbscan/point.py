@@ -10,6 +10,8 @@ class Point:
         self.id = Counter().increment()
         self.data = data
         self.neighbors = []
+        self.cluster = None
+        self.is_noise = False
         return
 
     def __eq__(self, other: Point) -> bool:
@@ -32,6 +34,9 @@ class Point:
     
     def get_neighbors(self) -> List[Point]:
         return self.neighbors
+
+    def assign_cluster(self, cluster: int):
+        self.cluster = cluster
 
 class TestPoint(unittest.TestCase):
     def test_adding_neighbors(self):
