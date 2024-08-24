@@ -1,9 +1,13 @@
 import unittest
 import random
 from point import Point
-from typing import List
+from typing import List, Tuple
+from numbers import Number
+import statistics
 
 class DBSCAN:
+    # in the original paper, min point and epsilon are automatically generated
+    # based on dataset properties.
     def __init__(self, dataset, distance_func, min_point, epsilon):
         self.dataset = [Point(d) for d in dataset]
         self.epsilon = epsilon
@@ -147,6 +151,95 @@ class DBSCAN:
                 cluster_count += 1
         return clusters
 
+    # get sorted K-distance based on reference point
+    # this function will calculate all distance from a reference point to the rest of database
+    # It will return array two value pair, first is the Kth order and its distance from reference point
+    # we can do this by finding the distance to each point and reordering it
+    def get_sorted_k_distance(self, reference: Point) -> List[Tuple[int, float]]:
+        container = []
+        for d in self.dataset:
+            if d == reference:
+                continue
+            container.append([d.id, self.distance_func(reference, d)])
+        return sorted(container, key=lambda c: c[1], reverse=True)
+
+    # this is a numerical and approximation approach to an empirical data
+    # we can reuse this several time if we want to get derivative of derivative
+    def get_pseudo_derivative(self, array: List[Number]):
+        container = []
+        for index in range(1, len(array)):
+            container.append(array[index] - array[index-1])
+        return container
+
+    # the cluster would get stablized i.e. does not have much changes in distance
+    # in respect to reference point. therefore we can consider minimum point value
+    # is the index of sorted k distance array when stablized.
+    #
+    # this function assume that array is already sorted. Would return
+    # wrong index if not sorted. This function also assume that clusters
+    # always have more member than noise
+    def get_stabilized_index(self, array: List[Number]) -> int:
+        if len(array) < 3:
+            return 1
+        avg = statistics.mean(array)
+        std_dev = statistics.stdev(array)
+        count = 0
+        for index, value in enumerate(array):
+            is_inside_range = value < avg + std_dev and value > avg - std_dev
+            if is_inside_range:
+                count += 1
+            if not is_inside_range:
+                count = 0
+            if count > 3:
+                return index
+        return 0
+
+    # work similiarly like get_stabilized_index but detecting non standard changes
+    # return the index of first significant change
+    #
+    # this function assume that array is already sorted. Would return
+    # wrong index if not sorted
+    def get_elbow_index(self, array: List[Number]) -> int:
+        if len(array) < 3:
+            return 1
+        avg = statistics.mean(array)
+        std_dev = statistics.stdev(array)
+        # unlike stabilized index, once we get the significant change we immediately
+        # assign to previous index it
+        for index, value in enumerate(array):
+            if value > avg + std_dev or value < avg - std_dev:
+                return index-1
+        return 0
+
+    # in the original paper, the authors decide that the min point is 4 based on their
+    # observation, there are few ways we can improve this but thats for other time
+    # however this is only tested in two dimensional data, other article
+    # define that min_points should be equal to data dimension + 1
+    # but give no further explanation why is it the way
+    def generate_min_points(self, use_default=True):
+        if use_default:
+            return 4
+        point = self.random_pick_point([], True)
+        k_dist = self.get_sorted_k_distance(point)
+        k_dist_derivative = self.get_pseudo_derivative([i[1] for i in k_dist])
+        stabilized_index = self.get_stabilized_index(k_dist_derivative)
+        return stabilized_index
+
+    # in the original paper, the epsilon decided by context and user wisdom
+    # In addition, it also mentioned that sorted k-dist can be helpful to determine
+    # the optimal epsilon. Other literature and discussion points out that the "elbow"
+    # of sorted k-dist ascending graph is the optimal value of epsilon since it is represent the first
+    # significant distance between reference point and other cluster. This function
+    # assume that we will pick a cluster point instead of noise.
+    def generate_epsilon(self) -> float:
+        point = self.random_pick_point([], True)
+        k_dist = self.get_sorted_k_distance(point)
+        rreversed = sorted(k_dist, key=lambda x: x[1])
+        reversed_derivative = self.get_pseudo_derivative([i[1] for i in rreversed])
+        elbow = self.get_elbow_index(reversed_derivative)
+        return rreversed[elbow][1]
+
+# example distance calculation, should be able to replace with other distance function
 def euclidean(p1, p2):
     return ((p1.data[0] - p2.data[0]) ** 2 + (p1.data[1] - p2.data[1]) ** 2 ) ** .5
 
@@ -378,6 +471,90 @@ class TestDBSCAN(unittest.TestCase):
         self.assertEqual(db.dataset[12].is_noise, True)
         self.assertEqual(db.dataset[13].cluster, None)
         self.assertEqual(db.dataset[13].is_noise, True)
+
+    def test_get_sorted_k_distance(self):
+        # all of this should belong to the same cluster
+        cluster1 = [
+            [0, 0], # center cluster
+            [0, 2.9], # edge 
+            [2.7, 0],
+            [-2.4, 0],
+            [0, -2.2]
+        ]
+        db = DBSCAN(cluster1, euclidean, 4, 5)
+        sortedd = db.get_sorted_k_distance(db.dataset[0])
+
+        self.assertEqual(len(sortedd), len(cluster1)-1)
+        
+        # the first one should be the most further
+        self.assertEqual(sortedd[0][0], db.dataset[1].id)
+        self.assertEqual(sortedd[1][0], db.dataset[2].id)
+        self.assertEqual(sortedd[2][0], db.dataset[3].id)
+        self.assertEqual(sortedd[3][0], db.dataset[4].id)
+
+    def test_generate_min_points(self):
+        # all of this should belong to the same cluster
+        cluster1 = [
+            [0, 0], # center cluster
+            [0, 2], # edge 
+            [2, 0],
+            [-2, 0],
+            [0, -2],
+            [0, 6], # not epsilon neighbor of center cluster but reachable via edge
+            [-6, 0], # not epsilon neighbor of center cluster but reachable via edge
+        ]
+
+        # all of this should belong to the same cluster
+        cluster2 = [
+                [-16,-16], # center cluster
+                [-17,-16], 
+                [-16,-17],
+                [-15,-16],
+                [-16,-15],
+        ]
+
+        # should not be assigned to any cluster
+        noise = [
+            [200,200],
+            [-200,-200],
+            [-400,-700],
+            [-600,-800],
+            [-650,-800],
+        ]
+        all_points = cluster1 + cluster2 + noise
+        db = DBSCAN(all_points, euclidean, 4, 5)
+        index = db.generate_min_points(False)
+        self.assertEqual(index, len(noise) + 3)
+
+    def test_generate_epsilon(self):
+        # all of this should belong to the same cluster
+        cluster1 = [
+            [0, 0], # center cluster
+            [0, 2], # edge 
+            [2, 0],
+            [0, -2],
+            [-2, 0], 
+        ]
+
+        # all of this should belong to the same cluster
+        cluster2 = [
+                [-16,-16], # center cluster
+                [-17,-16], 
+                [-16,-17],
+                [-15,-16],
+                [-16,-15],
+        ]
+
+        # should not be assigned to any cluster
+        noise = [
+            [30,2],
+            [-2,-30],
+        ]
+        all_points = cluster1 + cluster2 + noise
+        db = DBSCAN(all_points, euclidean, 4, 5)
+        distance = db.generate_epsilon()
+        self.assertLessEqual(distance, 2)
+
         
 if __name__ == "__main__":
     unittest.main()
