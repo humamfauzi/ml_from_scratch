@@ -1,9 +1,12 @@
 import unittest
 import random
 from point import Point
-from typing import List, Tuple
+from typing import List, Tuple, Callable
 from numbers import Number
 import statistics
+
+# an DBSCAN interface for sklearn like unsupervised learning
+
 
 class DBSCAN:
     # in the original paper, min point and epsilon are automatically generated
@@ -242,6 +245,25 @@ class DBSCAN:
 # example distance calculation, should be able to replace with other distance function
 def euclidean(p1, p2):
     return ((p1.data[0] - p2.data[0]) ** 2 + (p1.data[1] - p2.data[1]) ** 2 ) ** .5
+
+class DBSCANSklearn(DBSCAN):
+    def __init__(self, eps=0.3, min_samples=10, distance='euclidean'):
+        self.epsilon = eps
+        self.min_point = min_samples
+        self.labels_ = None
+        self.distance = self.pick_distance(distance)
+
+    def pick_distance(self, distance) -> Callable[[Point, Point], float]:
+        def euclidean(p1, p2):
+            return ((p1.data[0] - p2.data[0]) ** 2 + (p1.data[1] - p2.data[1]) ** 2 ) ** .5
+        return euclidean
+
+    def fit(self, X) -> bool:
+        super().__init__(X, self.distance, self.min_point, self.epsilon)
+        super().run_all_epsilon_neighbor()
+        clusters = super().classification()
+        self.labels_ = clusters
+        return True
 
 class TestDBSCAN(unittest.TestCase):
     def test_epsilon(self):
@@ -506,11 +528,11 @@ class TestDBSCAN(unittest.TestCase):
 
         # all of this should belong to the same cluster
         cluster2 = [
-                [-16,-16], # center cluster
-                [-17,-16], 
-                [-16,-17],
-                [-15,-16],
-                [-16,-15],
+            [-16,-16], # center cluster
+            [-17,-16], 
+            [-16,-17],
+            [-15,-16],
+            [-16,-15],
         ]
 
         # should not be assigned to any cluster
@@ -554,6 +576,39 @@ class TestDBSCAN(unittest.TestCase):
         db = DBSCAN(all_points, euclidean, 4, 5)
         distance = db.generate_epsilon()
         self.assertLessEqual(distance, 2)
+
+    def test_dbscan_sklearn(self):
+        # use the same dataset for clusters since it is essentially called classification from parent class
+        # all of this should belong to the same cluster
+        cluster1 = [
+            [0, 0], # center cluster
+            [0, 2], # edge 
+            [2, 0],
+            [-2, 0],
+            [0, -2],
+            [0, 6], # not epsilon neighbor of center cluster but reachable via edge
+            [-6, 0], # not epsilon neighbor of center cluster but reachable via edge
+        ]
+
+        # all of this should belong to the same cluster
+        cluster2 = [
+                [-16,-16], # center cluster
+                [-17,-16], 
+                [-16,-17],
+                [-15,-16],
+                [-16,-15],
+        ]
+
+        # should not be assigned to any cluster
+        noise = [
+            [200,200],
+            [-200,-200],
+        ]
+
+        all_points = cluster1 + cluster2 + noise
+        skl =  DBSCANSklearn(5, 4, 'euclidean')
+        skl.fit(all_points)
+        self.assertEqual(len(skl.labels_), 2)
 
         
 if __name__ == "__main__":
