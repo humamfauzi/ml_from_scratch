@@ -20,5 +20,4 @@ without any near point that can be considered as grouped together.
 
 So now we declare a definition of neighborhood. We can declare neigborhood as
 
-Neighborhood of point $p$ is defined by $N_{\epsilon}(p)= \{q \in D\;|\;\text{dist}(p,q) \leq \epsilon \}$ where dist is a distance function that
-able toke two point
+> Definition 1: The Epsilon neighborhood $\epsilon$ of a point $p$. denoted by $N_{\epsilon}(p)$, is defined by $N_{\epsilon}(p)= \{q \in D\;|\;\text{dist}(p,q) \leq \epsilon \}$
