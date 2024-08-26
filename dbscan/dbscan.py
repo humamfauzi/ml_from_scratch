@@ -242,10 +242,8 @@ class DBSCAN:
         elbow = self.get_elbow_index(reversed_derivative)
         return rreversed[elbow][1]
 
-# example distance calculation, should be able to replace with other distance function
-def euclidean(p1, p2):
-    return ((p1.data[0] - p2.data[0]) ** 2 + (p1.data[1] - p2.data[1]) ** 2 ) ** .5
 
+# an sklearn derivative of DBSCAN so it has same properties and methods so it changable with sklearn class
 class DBSCANSklearn(DBSCAN):
     def __init__(self, eps=0.3, min_samples=10, distance='euclidean'):
         self.epsilon = eps
@@ -265,6 +263,12 @@ class DBSCANSklearn(DBSCAN):
         self.labels_ = clusters
         return True
 
+# example distance calculation, should be able to replace with other distance function
+def euclidean(p1, p2):
+    return ((p1.data[0] - p2.data[0]) ** 2 + (p1.data[1] - p2.data[1]) ** 2 ) ** .5
+
+
+# contains all test unit for DBSCAN component from its base definition to actual clustering
 class TestDBSCAN(unittest.TestCase):
     def test_epsilon(self):
         p1 = [1,2]
