@@ -253,7 +253,8 @@ class DBSCANSklearn(DBSCAN):
 
     def pick_distance(self, distance) -> Callable[[Point, Point], float]:
         def euclidean(p1, p2):
-            return ((p1.data[0] - p2.data[0]) ** 2 + (p1.data[1] - p2.data[1]) ** 2 ) ** .5
+            difference = [ (p1.data[i] - p2.data[i]) ** 2 for i in range(0, len(p1.data))]
+            return sum(difference)  ** 0.5
         return euclidean
 
     def fit(self, X) -> bool:

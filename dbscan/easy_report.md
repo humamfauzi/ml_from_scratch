@@ -21,3 +21,63 @@ without any near point that can be considered as grouped together.
 So now we declare a definition of neighborhood. We can declare neigborhood as
 
 > Definition 1: The Epsilon neighborhood $\epsilon$ of a point $p$. denoted by $N_{\epsilon}(p)$, is defined by $N_{\epsilon}(p)= \{q \in D\;|\;\text{dist}(p,q) \leq \epsilon \}$
+
+So let's say we define our distance using euclidean distance. We declare that our epsilon neighbor vaule is 5. Assume we pick point $p$ that located in (0,0) coordinate.
+Any point that inside the radius of 5 would be considered as epsilon neighbor of $p$. We notate it as $N_{\epsilon}(p)$ and it would have set of points. As you may infer,
+a point can be neighbor to each other.
+
+This approach can helps us establish the concept of cluster but not enough since a line of point that each of the line is the epsilon neighbor of each
+other can be considered as cluster which something that we dont want. We introduce the second concept called minumum point.
+
+> Definition 2: Directly density reachable. A point $p$ is *directly density reachable* from a point $q$ with respect to epsilon  if
+> 	1. $p \in N_\epsilon (q)$
+> 	2. $| N_\epsilon(q)| \geq P_{\text{min}}$
+
+We define concept directly densiry reachable which use previous epsilon neighbor notation and add new rules which the total epsilon neighbor must
+exceed or equal certain poisitive integer to be considered directly density reachable. 
+Symmetry in directly density reachable in only for *core points* but not for *edge points*. 
+This is because core points can always be fulfill the minimum point rules whereas edge point are not because they are in the edge of clusters.
+Using this concept, we can declare the third definition.
+
+> Definition 3: Density reachable, A point $p$ is density reachable from a point $q$ with respect to epsilon neighbors and minimum points. if there is a chain of points $p_1, \cdots, p_n$ where $p_1= q$ and $p_n = p$ such that $p_{i+1}$ is directly density reachable from $p_i \in p_1,\cdots,p_n$
+
+We add new definition so the edge point of clusters can be linked with core points. 
+The relation is transitive meaning the reachability relataion can be extended through other point but not symmetric.
+The core point can reach the edge point through series of point but edge point cannot because it fail at minimum point rule.
+So how do we know whether two edge points belong to a same cluster? Enter definition 4
+
+> Definition 4: Density connected. A point $p$ is density connected to a point $q$ with respect to epsilon neighbors and minimum points if there is a point $o$ such that both $p$ and $q$ are density reachable from $o$ with respect to epsilon neighbors and minimum point.
+
+So if two edge points is density connected to each other then we could assign both to the same cluster. 
+With this four definition, we can declare our cluster and noise defintion.
+
+> Definition 5: Cluster. Let $D$ be a database of points. A cluster $C$ with respect to epsilon neighbors and minimum points is a non empty subset of $D$ satisfying this following condition
+> 1. $\forall p, q:$ if $p \in C$ and $q$ is  density reachable for $p$ with respect to epsilon neighbors an minimal points, then $q \in C$. This would called as Maximality
+> 2. $\forall p, q \in C: p$ is a density connected to $q$ with respect to epsilon neighbors and minimal points. This would be called as Connectivity 
+
+> Definition 6: Noise, Let $C_1, \dots, C_k$ be the clusters of the database $D$ with respect to parameters $\epsilon_i$ and $P_{min}^i$ and $i = 1, \dots, k$ then we define noise as the set of points in the database $D$ not belonging to any cluster $C_i$. $\{p \in D\;|\;\forall i: p \notin C_i\}$
+
+Point that included in maximality is the core point and the one that included in connectivity is the edge point. Connectivity is the superset of maximality.
+Noise, on the other hand, does not belong to any cluster since it does not meet any definition we define earlier. 
+Intuitively, we can start clustering by picking random point and check whether that point fulfill the definition 2, 
+if yes that we can recursively find the edge of cluster until all point is visited. Then we can continue picking new non visited random point and
+start clustering again. We do this until all points are calculated. All points that does not belong to any cluster can be considered as noise.
+
+# Application
+
+One thing to note about the defintion 6 is that we consider that each cluster have their own minimum point $P_{min}$ and epsilon neighbor $N_{\epsilon}(p)$.
+In the actual DBSCAN application, we define both minumum point and epsilon neighbor as constant and applied to all clusters.
+
+As we discuss earlier, DBSCAN can start with random point. Roughly we can create the pseudocode like this
+
+```python
+def dbscan(points, eps, min_point):
+    visited = []
+    while not is_all_point_visited(visited, points):
+        point = pick_random_point(points)
+        if is_directly_density(point, points):
+            cluster_count = get_cluster_count()
+            assign_cluster(point, cluster_count)
+            find_recursive(
+```
+
