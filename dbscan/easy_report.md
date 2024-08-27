@@ -71,13 +71,58 @@ In the actual DBSCAN application, we define both minumum point and epsilon neigh
 As we discuss earlier, DBSCAN can start with random point. Roughly we can create the pseudocode like this
 
 ```python
-def dbscan(points, eps, min_point):
+def dbscan(dataset, eps, min_point):
     visited = []
     while not is_all_point_visited(visited, points):
-        point = pick_random_point(points)
-        if is_directly_density(point, points):
-            cluster_count = get_cluster_count()
-            assign_cluster(point, cluster_count)
-            find_recursive(
+        point = pick_random_point(dataset, visited)
+        cluster_count = get_cluster_count()
+        if cluster_recursive(point, cluster_count, visited):
+            increment_cluster_count()
+    return cluster_count
+
+def cluster_recursive(point, cluster_no, visited):
+    if not is_core_point(point) and is_clusterless(point):
+        mark_as_noise(neighbor) 
+        set_visited(point)
+        return False
+    
+    assign_cluster(point, cluster_no)
+    neighbor = get_epsilon_neighbor()
+    for n in neighbor:
+        if n in visited:
+            continue
+        if is_connected(point, n):
+            assign_cluster(neighbor, cluster_no)
+        set_visited(n)
+        cluster_recursive(point, cluster_no)
+    return True
 ```
+
+This is a long pseudocode but give roughly how DBSCAN works. First we have empty container `visited` which will help us to mark which point
+we already evaluate. We do this to avoid endless loop becase some points might be a neighbor of each other.
+We check whether we already visit all the points. This is our termination condition. We need this because we use recursive function.
+We pick random point that are not visited yet then we evalute it. 
+
+Function `cluster_recursive` evaluate a point, add it to visited. In the evaluation, we check whether the point is a core point
+which means it contains some minimum point count inside its epsilon neighbors. If it is not then we mark it as a noise; not belong to any cluster.
+If it contains minumum point, then we loop to all of its neighbor. If we already visit it, then we will skip it.
+If it is connected (see definition 5), then we can mark it as same clusters as point. Then for all its neighbor, we repeat the process until all neighbors is already visited.
+The few noise point will get visited via random pick point--it wont pick already visited point.
+When we already visit all point, then we can stop the iteration and return the clustering we done.
+
+## Epsilon and Minimal Point Parameters
+
+In the psudocode above, we see that we need to input epsilon and minimal point.
+One may ask what is the best epsilon and minimal point to get the most of DBSCAN?
+The DBSCAN original paper use something called *sorted K-dist graph*.
+
+Let's assume we pick a random point in a dataset.
+We can calculate the distance between this point and the rest of the dataset.
+This distance we can sort for the furthest to the nearest. This what *sorted K-dist graph*
+K-means distance mean the distance between point.
+K can be switched with integer. It represent the order of point in distance notation.
+For example, the nearest point would be the 1-dist, second nearest point would be 2-dist and so on.
+
+
+
 
