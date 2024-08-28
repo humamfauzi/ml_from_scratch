@@ -123,6 +123,39 @@ K-means distance mean the distance between point.
 K can be switched with integer. It represent the order of point in distance notation.
 For example, the nearest point would be the 1-dist, second nearest point would be 2-dist and so on.
 
+We sort it in from the furthest point to nearest point. We assume that furthest point are noise (at least that what the paper assumes).
+The line would get flatten because it reach a cluster but not the reference point cluster. The minumum point, recommended by the paper, is
+to find the first flatten line when ordering k-distance from the furthest to the nearest. The paper found that 4 is the acceptable number.
+Note that this is tested in two dimensional data. This is still relay on a user see the sorted K-dist graph because there is a chance that
+we pick a reference point that turns out to be a noise.
+
+What about the epsilon distance? Using same sorted K-dist graph, we can find a better epsilon distance.
+The difference is that the graph are sorted from the nearest to the furthest.
+The epsilon can be the first "elbow" that we encounter.
+Some discussion points out that some cluster might be smaller than our reference point cluster thus
+we need to reduce it by half to accomodate smaller cluster.
+
+# Conclusion
+
+DBSCAN is a clustering algorithm that uses notion of distance between point for deciding whether a point belong to same cluster are not.
+The algorithm itself are recursive thus require a termination condition. The termination is when all dataset is visited by the function.
+Intuitively, DBSCAN works by checking whether a point is in a distance (epsilon), it if where then it possibly belong to cluster.
+To avoid having many cluster, DBSCAN introduce a notion of minimum number of neighbor before consider it as a one cluster.
+DBSCAN excel in detecting a cluster as long as it has considrable distance among it. It would fail if the cluster does not have
+clear notion of distance. 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
