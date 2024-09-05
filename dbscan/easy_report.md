@@ -20,6 +20,7 @@ without any near point that can be considered as grouped together.
 
 So now we declare a definition of neighborhood. We can declare neigborhood as
 
+> [!IMPORTANT]
 > Definition 1: The Epsilon neighborhood $\epsilon$ of a point $p$. denoted by $N_{\epsilon}(p)$, is defined by $N_{\epsilon}(p)= \{q \in D\;|\;\text{dist}(p,q) \leq \epsilon \}$
 
 So let's say we define our distance using euclidean distance. We declare that our epsilon neighbor vaule is 5. Assume we pick point $p$ that located in (0,0) coordinate.
@@ -29,6 +30,7 @@ a point can be neighbor to each other.
 This approach can helps us establish the concept of cluster but not enough since a line of point that each of the line is the epsilon neighbor of each
 other can be considered as cluster which something that we dont want. We introduce the second concept called minumum point.
 
+> [!IMPORTANT]
 > Definition 2: Directly density reachable. A point $p$ is *directly density reachable* from a point $q$ with respect to epsilon  if
 > 	1. $p \in N_\epsilon (q)$
 > 	2. $| N_\epsilon(q)| \geq P_{\text{min}}$
@@ -46,15 +48,18 @@ The relation is transitive meaning the reachability relataion can be extended th
 The core point can reach the edge point through series of point but edge point cannot because it fail at minimum point rule.
 So how do we know whether two edge points belong to a same cluster? Enter definition 4
 
+> [!IMPORTANT]
 > Definition 4: Density connected. A point $p$ is density connected to a point $q$ with respect to epsilon neighbors and minimum points if there is a point $o$ such that both $p$ and $q$ are density reachable from $o$ with respect to epsilon neighbors and minimum point.
 
 So if two edge points is density connected to each other then we could assign both to the same cluster. 
 With this four definition, we can declare our cluster and noise defintion.
 
+> [!IMPORTANT]
 > Definition 5: Cluster. Let $D$ be a database of points. A cluster $C$ with respect to epsilon neighbors and minimum points is a non empty subset of $D$ satisfying this following condition
 > 1. $\forall p, q:$ if $p \in C$ and $q$ is  density reachable for $p$ with respect to epsilon neighbors an minimal points, then $q \in C$. This would called as Maximality
 > 2. $\forall p, q \in C: p$ is a density connected to $q$ with respect to epsilon neighbors and minimal points. This would be called as Connectivity 
 
+> [!IMPORTANT]
 > Definition 6: Noise, Let $C_1, \dots, C_k$ be the clusters of the database $D$ with respect to parameters $\epsilon_i$ and $P_{min}^i$ and $i = 1, \dots, k$ then we define noise as the set of points in the database $D$ not belonging to any cluster $C_i$. $\{p \in D\;|\;\forall i: p \notin C_i\}$
 
 Point that included in maximality is the core point and the one that included in connectivity is the edge point. Connectivity is the superset of maximality.
@@ -144,8 +149,8 @@ To avoid having many cluster, DBSCAN introduce a notion of minimum number of nei
 DBSCAN excel in detecting a cluster as long as it has considrable distance among it. It would fail if the cluster does not have
 clear notion of distance. 
 
-
-
+# Reference
+- [Ester, Martin. (1996). A Density Based Algorithm for Discovering Clusters in Large Spatial Databases With Noise. Proceedings in 2nd International Conference of Knowledge Discovery and Data Mining. KDD-96](https://www.dbs.ifi.lmu.de/Publikationen/Papers/KDD-96.final.frame.pdf)
 
 
 
