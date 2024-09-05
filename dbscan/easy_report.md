@@ -22,6 +22,7 @@ So now we declare a definition of neighborhood. We can declare neigborhood as
 
 > [!IMPORTANT]
 > Definition 1: The Epsilon neighborhood $\epsilon$ of a point $p$. denoted by $N_{\epsilon}(p)$, is defined by $N_{\epsilon}(p)= \{q \in D\;|\;\text{dist}(p,q) \leq \epsilon \}$
+![definition 1](/assets/images/dbscan_definition_1.png)
 
 So let's say we define our distance using euclidean distance. We declare that our epsilon neighbor vaule is 5. Assume we pick point $p$ that located in (0,0) coordinate.
 Any point that inside the radius of 5 would be considered as epsilon neighbor of $p$. We notate it as $N_{\epsilon}(p)$ and it would have set of points. As you may infer,
@@ -34,6 +35,7 @@ other can be considered as cluster which something that we dont want. We introdu
 > Definition 2: Directly density reachable. A point $p$ is *directly density reachable* from a point $q$ with respect to epsilon  if
 > 	1. $p \in N_\epsilon (q)$
 > 	2. $| N_\epsilon(q)| \geq P_{\text{min}}$
+![definition 2](/assets/images/dbscan_definition_2.png)
 
 We define concept directly densiry reachable which use previous epsilon neighbor notation and add new rules which the total epsilon neighbor must
 exceed or equal certain poisitive integer to be considered directly density reachable. 
@@ -42,6 +44,7 @@ This is because core points can always be fulfill the minimum point rules wherea
 Using this concept, we can declare the third definition.
 
 > Definition 3: Density reachable, A point $p$ is density reachable from a point $q$ with respect to epsilon neighbors and minimum points. if there is a chain of points $p_1, \cdots, p_n$ where $p_1= q$ and $p_n = p$ such that $p_{i+1}$ is directly density reachable from $p_i \in p_1,\cdots,p_n$
+![definition 3](/assets/images/dbscan_definition_3.png)
 
 We add new definition so the edge point of clusters can be linked with core points. 
 The relation is transitive meaning the reachability relataion can be extended through other point but not symmetric.
@@ -50,6 +53,7 @@ So how do we know whether two edge points belong to a same cluster? Enter defini
 
 > [!IMPORTANT]
 > Definition 4: Density connected. A point $p$ is density connected to a point $q$ with respect to epsilon neighbors and minimum points if there is a point $o$ such that both $p$ and $q$ are density reachable from $o$ with respect to epsilon neighbors and minimum point.
+![definition 4](/assets/images/dbscan_definition_4.png)
 
 So if two edge points is density connected to each other then we could assign both to the same cluster. 
 With this four definition, we can declare our cluster and noise defintion.
@@ -58,9 +62,11 @@ With this four definition, we can declare our cluster and noise defintion.
 > Definition 5: Cluster. Let $D$ be a database of points. A cluster $C$ with respect to epsilon neighbors and minimum points is a non empty subset of $D$ satisfying this following condition
 > 1. $\forall p, q:$ if $p \in C$ and $q$ is  density reachable for $p$ with respect to epsilon neighbors an minimal points, then $q \in C$. This would called as Maximality
 > 2. $\forall p, q \in C: p$ is a density connected to $q$ with respect to epsilon neighbors and minimal points. This would be called as Connectivity 
+![definition 5](/assets/images/dbscan_definition_5.png)
 
 > [!IMPORTANT]
 > Definition 6: Noise, Let $C_1, \dots, C_k$ be the clusters of the database $D$ with respect to parameters $\epsilon_i$ and $P_{min}^i$ and $i = 1, \dots, k$ then we define noise as the set of points in the database $D$ not belonging to any cluster $C_i$. $\{p \in D\;|\;\forall i: p \notin C_i\}$
+![definition 6](/assets/images/dbscan_definition_6.png)
 
 Point that included in maximality is the core point and the one that included in connectivity is the edge point. Connectivity is the superset of maximality.
 Noise, on the other hand, does not belong to any cluster since it does not meet any definition we define earlier. 
@@ -128,17 +134,22 @@ K-means distance mean the distance between point.
 K can be switched with integer. It represent the order of point in distance notation.
 For example, the nearest point would be the 1-dist, second nearest point would be 2-dist and so on.
 
+
+![sorted k dist](/assets/images/dbscan_sorted_k_dist.png)
+
 We sort it in from the furthest point to nearest point. We assume that furthest point are noise (at least that what the paper assumes).
 The line would get flatten because it reach a cluster but not the reference point cluster. The minumum point, recommended by the paper, is
 to find the first flatten line when ordering k-distance from the furthest to the nearest. The paper found that 4 is the acceptable number.
 Note that this is tested in two dimensional data. This is still relay on a user see the sorted K-dist graph because there is a chance that
 we pick a reference point that turns out to be a noise.
+![sorted k dist valley](/assets/images/dbscan_sorted_k_dist_valley.png)
 
 What about the epsilon distance? Using same sorted K-dist graph, we can find a better epsilon distance.
 The difference is that the graph are sorted from the nearest to the furthest.
 The epsilon can be the first "elbow" that we encounter.
 Some discussion points out that some cluster might be smaller than our reference point cluster thus
 we need to reduce it by half to accomodate smaller cluster.
+![sorted k dist elbow](/assets/images/dbscan_sorted_k_dist_elbow.png)
 
 # Conclusion
 
